@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     # API Keys
     groq_api_key: SecretStr = Field(..., env="GROQ_API_KEY")
     deepgram_api_key: SecretStr = Field(..., env="DEEPGRAM_API_KEY")
-    image_api_key: SecretStr = Field(..., env="IMAGE_API_KEY")
+    cloudflare_account_id: SecretStr = Field(..., env="CLOUDFLARE_ACCOUNT_ID")
+    cloudflare_api_token: SecretStr = Field(..., env="CLOUDFLARE_API_TOKEN")
     
     # YouTube OAuth
     youtube_client_id: str = Field(..., env="YOUTUBE_CLIENT_ID")

@@ -16,14 +16,26 @@ from config.prompts import (
 )
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def generate_image_placeholder(prompt: str, output_path: Path):
-    """Use picsum for reliable, free placeholder images while Hugging Face is offline."""
-    import random
+def generate_image_cloudflare(prompt: str, output_path: Path):
+    """Call Cloudflare Workers AI (Stable Diffusion XL). Ultra reliable, zero DNS issues, huge free tier."""
+    from config.settings import settings
     
-    seed = random.randint(1, 100000)
-    url = f"https://picsum.photos/seed/{seed}/1080/1920"
+    account_id = settings.cloudflare_account_id.get_secret_value()
+    api_token = settings.cloudflare_api_token.get_secret_value()
     
-    response = requests.get(url, timeout=30)
+    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0"
+    
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "prompt": prompt,
+        "num_steps": 20
+    }
+    
+    response = requests.post(url, headers=headers, json=payload, timeout=60)
     response.raise_for_status()
     
     with open(output_path, "wb") as f:
@@ -55,7 +67,7 @@ def generate_scene_images(script_data: dict, output_dir: Path) -> list[str]:
         final_prompt = f"{full_prompt}\nAvoid: {NEGATIVE_PROMPT}"
         
         output_path = output_dir / f"scene_{i+1:02d}.png"
-        generate_image_placeholder(final_prompt, output_path)
+        generate_image_cloudflare(final_prompt, output_path)
         image_paths.append(str(output_path))
         
         time.sleep(2)  # Avoid rate limits
