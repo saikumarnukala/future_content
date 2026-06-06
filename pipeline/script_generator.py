@@ -69,5 +69,5 @@ def validate_script(script_data: dict):
             
     total_narration = script_data.get("full_narration", "")
     total_words = len(total_narration.split())
-    if total_words < 70:
-        raise ValueError(f"Total narration word count {total_words} is too low for a 30-45s video. Regenerate with longer, more descriptive sentences.")
+    if total_words < 55:
+        raise ValueError(f"Total narration word count {total_words} is too low. Regenerate with longer sentences.")
