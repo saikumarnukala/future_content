@@ -16,31 +16,46 @@ from config.prompts import (
 )
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def generate_image_deepai(prompt: str, output_path: Path):
-    """Call DeepAI API to generate an image (100% free, no credit card required)."""
+def generate_image_huggingface(prompt: str, output_path: Path):
+    """Call Hugging Face Inference API. 100% free, no credit card. Works perfectly in cloud."""
     from config.settings import settings
+    import time
     
-    url = "https://api.deepai.org/api/text2img"
+    url = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+    
     headers = {
-        "api-key": settings.image_api_key.get_secret_value()
-    }
-    data = {
-        "text": prompt,
+        "Authorization": f"Bearer {settings.image_api_key.get_secret_value()}",
+        "Content-Type": "application/json"
     }
     
-    response = requests.post(url, headers=headers, data=data, timeout=60)
-    response.raise_for_status()
+    payload = {
+        "inputs": prompt,
+        "parameters": {
+            "negative_prompt": "cartoon, anime, illustration, painting, drawing, low quality, blurry, pixelated, watermark, text",
+            "num_inference_steps": 25,
+            "guidance_scale": 7.5
+        }
+    }
     
-    result = response.json()
-    image_url = result.get("output_url")
-    if not image_url:
-        raise ValueError(f"DeepAI did not return an image: {response.text}")
+    max_wait = 120
+    start_time = time.time()
+    
+    while True:
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
         
-    img_response = requests.get(image_url, timeout=60)
-    img_response.raise_for_status()
+        # Handle Hugging Face model loading (cold start)
+        if response.status_code == 503:
+            if time.time() - start_time > max_wait:
+                raise RuntimeError("Hugging Face model took too long to load.")
+            print("Model is loading. Waiting 15 seconds...")
+            time.sleep(15)
+            continue
+            
+        response.raise_for_status()
+        break
     
     with open(output_path, "wb") as f:
-        f.write(img_response.content)
+        f.write(response.content)
 
 def generate_scene_images(script_data: dict, output_dir: Path) -> list[str]:
     """Generate all 6 images based on the script scenes."""
@@ -68,7 +83,7 @@ def generate_scene_images(script_data: dict, output_dir: Path) -> list[str]:
         final_prompt = f"{full_prompt}\nAvoid: {NEGATIVE_PROMPT}"
         
         output_path = output_dir / f"scene_{i+1:02d}.png"
-        generate_image_deepai(final_prompt, output_path)
+        generate_image_huggingface(final_prompt, output_path)
         image_paths.append(str(output_path))
         
         time.sleep(2)  # Avoid rate limits
