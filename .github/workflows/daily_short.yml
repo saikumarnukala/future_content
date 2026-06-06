@@ -31,9 +31,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data/
-          key: shorts-data-v3-${{ github.run_id }}
+          key: shorts-data-v4-${{ github.run_id }}
           restore-keys: |
-            shorts-data-v3-
+            shorts-data-v4-
 
       - name: Run Pipeline
         env:
@@ -61,4 +61,4 @@ jobs:
         if: always()
         with:
           path: data/
-          key: shorts-data-v3-${{ github.run_id }}
+          key: shorts-data-v4-${{ github.run_id }}

@@ -16,18 +16,14 @@ from config.prompts import (
 )
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def generate_image_pollinations(prompt: str, output_path: Path):
-    """Call Pollinations AI. 100% free, no API key, very stable, no DNS issues."""
-    import urllib.parse
+def generate_image_placeholder(prompt: str, output_path: Path):
+    """Use picsum for reliable, free placeholder images while Hugging Face is offline."""
+    import random
     
-    encoded_prompt = urllib.parse.quote(prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1080&height=1920&nologo=true"
+    seed = random.randint(1, 100000)
+    url = f"https://picsum.photos/seed/{seed}/1080/1920"
     
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    
-    response = requests.get(url, headers=headers, timeout=60)
+    response = requests.get(url, timeout=30)
     response.raise_for_status()
     
     with open(output_path, "wb") as f:
@@ -59,7 +55,7 @@ def generate_scene_images(script_data: dict, output_dir: Path) -> list[str]:
         final_prompt = f"{full_prompt}\nAvoid: {NEGATIVE_PROMPT}"
         
         output_path = output_dir / f"scene_{i+1:02d}.png"
-        generate_image_pollinations(final_prompt, output_path)
+        generate_image_placeholder(final_prompt, output_path)
         image_paths.append(str(output_path))
         
         time.sleep(2)  # Avoid rate limits
