@@ -26,8 +26,8 @@ REQUIRED OUTPUT STRUCTURE (strict JSON):
   "scenes": [
     {{
       "scene_number": 1,
-      "duration_seconds": 5,
-      "narration": "Voiceover text - conversational, visceral, 15-20 words max",
+      "duration_seconds": 6,
+      "narration": "Voiceover text - conversational, visceral, EXACTLY 15-25 words per scene. Use full descriptive sentences, never short fragments.",
       "visual_description": "Cinematographer-level shot description for image gen",
       "camera_movement": "dolly-in | pan-left | tilt-up | handheld | static-wide",
       "mood": "tense | awe | melancholic | triumphant | eerie | wonder"
@@ -45,10 +45,10 @@ REQUIRED OUTPUT STRUCTURE (strict JSON):
 RULES:
 - Scene array must contain exactly 6 scenes.
 - Hook must NOT start with "In a world" or "Imagine if"
-- Each scene narration <= 20 words
+- Each scene narration must be FULL sentences (15 to 30 words). DO NOT write 3-word fragments.
 - Story must have: setup -> tension -> resolution arc
 - No scene may repeat a visual concept from a prior scene
-- Total narration word count: 80-120 words
+- Total narration word count MUST be exactly 90-120 words to hit the 30-45 second length mark.
 """
 
 # Master prompt for image generation

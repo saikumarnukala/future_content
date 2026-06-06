@@ -64,10 +64,10 @@ def validate_script(script_data: dict):
     for i, scene in enumerate(scenes):
         narration = scene.get("narration", "")
         word_count = len(narration.split())
-        if word_count > 20:
-            raise ValueError(f"Scene {i+1} narration exceeds 20 words (count: {word_count})")
+        if word_count > 35:
+            raise ValueError(f"Scene {i+1} narration exceeds 35 words (count: {word_count})")
             
     total_narration = script_data.get("full_narration", "")
     total_words = len(total_narration.split())
-    if total_words < 10:
-        raise ValueError(f"Total narration word count {total_words} is extremely low. Regenerate.")
+    if total_words < 70:
+        raise ValueError(f"Total narration word count {total_words} is too low for a 30-45s video. Regenerate with longer, more descriptive sentences.")
