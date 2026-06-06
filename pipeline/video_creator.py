@@ -25,8 +25,8 @@ def create_video(
     """
     scenes = script_data.get("scenes", [])
     
-    if len(image_paths) != 6 or len(scenes) != 6:
-        raise ValueError("Must have exactly 6 images and 6 scenes")
+    if len(image_paths) != len(scenes):
+        raise ValueError(f"Number of images ({len(image_paths)}) must match number of scenes ({len(scenes)})")
 
     audio_duration = get_audio_duration(narration_path)
     # Add 1.5s padding so the audio finishes completely before fading out
@@ -63,9 +63,9 @@ def create_video(
     offset = clip_duration - TRANSITION_DURATION
     last_out = "[0:v]"
     
-    for i in range(1, 6):
+    for i in range(1, N):
         next_in = f"[{i}:v]"
-        out_lbl = f"[v{i}]" if i < 5 else "[vout]"
+        out_lbl = f"[v{i}]" if i < N - 1 else "[vout]"
         filter_complex += f"{last_out}{next_in}xfade=transition=fade:duration={TRANSITION_DURATION}:offset={offset:.3f}{out_lbl};"
         last_out = out_lbl
         offset += clip_duration - TRANSITION_DURATION
