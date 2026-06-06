@@ -46,7 +46,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           mkdir -p data/music
-          python pipeline/main.py
+          python -m pipeline.main
 
       - name: Upload Output Artifacts
         uses: actions/upload-artifact@v4
