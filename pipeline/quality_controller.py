@@ -2,10 +2,8 @@
 Quality Control scoring engine.
 """
 
-import os
+import json
 import subprocess
-from groq import Groq
-from config.settings import settings
 
 def analyze_audio(narration_path: str) -> dict:
     """Analyze audio duration using FFprobe."""
@@ -16,7 +14,7 @@ def analyze_audio(narration_path: str) -> dict:
     duration_str = subprocess.check_output(cmd).decode().strip()
     return {"duration": float(duration_str) if duration_str else 0}
 
-def score_script(script_data: dict, client: Groq) -> int:
+def score_script(script_data: dict, client=None) -> int:
     """Score script quality on 0-25."""
     score = 25
     hook = script_data.get("hook", "")
@@ -51,18 +49,30 @@ def score_narration(narration_path: str) -> int:
 
 def score_production(video_path: str) -> int:
     """Score video production output."""
-    score = 25
-    if not os.path.exists(video_path):
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", video_path],
+            check=True, capture_output=True, text=True, timeout=30,
+        )
+        media = json.loads(result.stdout)
+        duration = float(media["format"]["duration"])
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError):
         return 0
-    return score
+
+    has_audio = any(stream["codec_type"] == "audio" for stream in media["streams"])
+    has_vertical_video = any(
+        stream["codec_type"] == "video"
+        and stream.get("width", 0) > 0
+        and stream.get("height", 0) * 9 == stream["width"] * 16
+        for stream in media["streams"]
+    )
+    return 25 if has_audio and has_vertical_video and 0 < duration <= 60 else 0
 
 def run_quality_control(script_data: dict, narration_path: str, video_path: str) -> dict:
     """
     Run full QC scoring.
     """
-    client = Groq(api_key=settings.groq_api_key.get_secret_value())
-    
-    script_score = score_script(script_data, client)
+    script_score = score_script(script_data)
     visual_score = score_visuals(script_data)
     audio_score = score_narration(narration_path)
     prod_score = score_production(video_path)

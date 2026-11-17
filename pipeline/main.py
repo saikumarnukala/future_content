@@ -43,8 +43,8 @@ def run_pipeline():
         db.commit()
         db.refresh(video_record)
         
-    if video_record.upload_status == 'uploaded':
-        logger.info("Video already uploaded for today.")
+    if video_record.upload_status in ('uploaded', 'local_test_complete'):
+        logger.info("Today's Short is already complete.")
         return
 
     while video_record.attempt_count < max_attempts:
@@ -135,15 +135,22 @@ def run_pipeline():
             logger.info(f"QC Score: {qc_results['overall']}")
             
             if qc_results["overall"] >= 90:
-                logger.info("QC Passed. Proceeding to Upload.")
+                logger.info("QC passed. Preview ready.")
             elif qc_results["overall"] >= 80:
-                logger.warning("QC Marginal. Flagging for review but uploading.")
+                logger.warning("QC marginal. Preview requires review.")
                 video_record.upload_status = 'review'
                 notify_slack(f"Video created with marginal QC score: {qc_results['overall']}")
             else:
                 logger.error(f"QC Failed: {qc_results['overall']}. Regenerating.")
                 video_record.script_json = ""
                 video_record.image_paths = ""
+                video_record.narration_path = None
+                video_record.video_path = None
+                for stale_path in (narration_path, srt_path, ass_path, video_path):
+                    stale_path.unlink(missing_ok=True)
+                db.commit()
+                if video_record.attempt_count == max_attempts:
+                    raise RuntimeError(f"Short failed quality checks after {max_attempts} attempts.")
                 continue
                 
             # YouTube Upload (Temporarily skipped for local testing)
